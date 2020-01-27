@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Mast TFs launch script
+
+Author: Olivier Lamarre <olivier.lamarre@robotics.utias.utoronto.ca>
+
+Affl:   Space and Terrestrial Autonomous Robotic Systems (STARS) Laboratory
+        University of Toronto       
+Date:   May 22, 2019 -->
+
+<launch>
+
+  <!-- Omnidirectional stereo camera -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="omni_ref_broadcaster" args="0.236 -0.129 0.59 -0.6300368 -0.3210198 0.3210198 0.6300368 top_plate_link omni_ref_link" />
+  <node pkg="enav_ros" type="omni_tf_broadcaster" name="omni_tf_broadcaster"/>
+
+  <!-- Monocular camera and IMU -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="mono_broadcaster" args="-0.1267447   0.22945096  0.01294369 -0.18264714 0.00890384  -0.00610516  0.98311925  omni4 mono" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="imu_broadcaster" args=" 0.1524  0.2624  0.0422  -0.5701  0.0076  0.0048 0.8215 mono imu" />
+
+</launch>

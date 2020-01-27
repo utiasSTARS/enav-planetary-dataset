@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Enav rover description launch script
+
+Author: Olivier Lamarre <olivier.lamarre@robotics.utias.utoronto.ca>
+
+Affl:   Space and Terrestrial Autonomous Robotic Systems (STARS) Laboratory
+        University of Toronto       
+Date:   May 22, 2019 -->
+
+<launch>
+
+  <arg name="robot_namespace" default="/husky"/>
+  <rosparam command="load" file="$(find enav_ros)/config/omni_factory_calibration.yaml" />
+
+  <!-- Modified barebone Husky base -->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find enav_ros)/urdf/rover_main.urdf.xacro'
+    --inorder" />
+
+  <node pkg="interactive_marker_twist_server" type="marker_server" name="twist_marker_server" output="screen"/>
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" >
+    <param name="use_gui" value="false" />
+  </node>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+  <!-- Mast TFs -->
+  <include file="$(find enav_ros)/launch/mast_tf_broadcaster.launch"/>
+  
+</launch>

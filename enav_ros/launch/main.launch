@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<!-- main.launch
+
+Enav main launch script for data visualization
+
+Author: Olivier Lamarre <olivier.lamarre@robotics.utias.utoronto.ca>
+Affl:   Space and Terrestrial Autonomous Robotic Systems (STARS) Laboratory
+        University of Toronto       
+Date:   May 22, 2019
+
+-->
+
+<launch>
+    <arg name="bag"/>                       <!-- /complete/path/to/rosbag.bag -->
+    <arg name="map_dir" default="false"/>   <!-- /path/to/map/directory-->
+
+    <!-- Start bag in pause mode -->
+    <param name="/use_sim_time" value="true"/>
+    <node pkg="rosbag" type="play" name="player" output="screen" args="$(arg bag) -l --clock --pause"/>
+
+    <!-- Load maps and site origin TF, if map_dir is specified -->
+    <group if="$(eval arg('map_dir') != false)">
+        <node pkg="tf2_ros" type="static_transform_publisher" name="csa_origin_broadcaster"
+              args="625438.3852074281 5041773.750279282 25 0 0 0 world csa_origin"/>
+        <node pkg="enav_ros" type="site_loader_node" name="site_loader_node" args="$(arg map_dir)" output="screen"/>
+    </group>
+
+    <!-- Load rover description -->
+    <include file="$(find enav_ros)/launch/rover_description.launch"/>
+
+    <!-- Publish planar odometry transform from wheel odometry -->
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization">
+        <rosparam command="load" file="$(find enav_ros)/config/localization_global_odom.yaml" />
+    </node>
+
+    <!-- Open RViz -->
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find enav_ros)/config/main.rviz" />
+
+</launch>

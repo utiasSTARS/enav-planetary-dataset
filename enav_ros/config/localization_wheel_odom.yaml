@@ -1,0 +1,16 @@
+odom_frame: odom
+base_link_frame: base_link
+world_frame: odom
+
+two_d_mode: true
+
+frequency: 10
+
+odom0: husky_velocity_estimate
+odom0_config: [false, false, false,
+               false, false, false,
+               true, true, true,
+               false, false, true,
+               false, false, false]
+odom0_differential: false
+odom0_queue_size: 10

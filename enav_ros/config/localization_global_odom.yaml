@@ -1,0 +1,17 @@
+odom_frame: world
+base_link_frame: base_link
+world_frame: world
+
+two_d_mode: false
+
+frequency: 10
+
+odom0: global_odometry_utm
+odom0_config: [true, true, true,
+               true, true, true,
+               false, false, false,
+               false, false, false,
+               false, false, false]
+odom0_differential: false
+odom0_relative: false
+odom0_queue_size: 1

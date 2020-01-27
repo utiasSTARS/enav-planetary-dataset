@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+
+<!--  rover_main.urdf.xacro
+
+      Rover's main URDF file
+      Adapted from https://github.com/husky/husky/blob/kinetic-devel/husky_description/urdf/husky.urdf.xacro 
+
+Author: Olivier Lamarre <olivier.lamarre@robotics.utias.utoronto.ca>
+
+Affl:   Space and Terrestrial Autonomous Robotic Systems (STARS) Laboratory
+        University of Toronto       
+Date:   May 22, 2019 -->
+
+<robot name="rover" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:arg name="robot_namespace" default="/" />
+
+  <!-- Included URDF/XACRO Files -->
+  <xacro:include filename="$(find enav_ros)/urdf/decorations.urdf.xacro" />
+  <xacro:include filename="$(find enav_ros)/urdf/wheel.urdf.xacro" />
+
+  <xacro:property name="M_PI" value="3.14159"/>
+
+  <!-- Wheel Mounting Positions -->
+  <xacro:property name="wheelbase" value="0.5120" />
+  <xacro:property name="track" value="0.5708" />
+  <xacro:property name="wheel_vertical_offset" value="0.03282" />
+
+  <!-- Wheel Properties -->
+  <xacro:property name="wheel_length" value="0.1143" />
+  <xacro:property name="wheel_radius" value="0.1651" />
+
+  <!-- Base link is the center of the robot's bottom plate -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://enav_ros/meshes/base_link.dae" />
+      </geometry>
+    </visual>
+  </link>
+
+  <!-- Base footprint is on the ground under the robot -->
+  <link name="base_footprint"/>
+  <joint name="base_footprint_joint" type="fixed">
+    <origin xyz="0 0 ${wheel_vertical_offset - wheel_radius}" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="base_footprint" />
+  </joint>
+
+  <!-- Husky wheel macros -->
+  <xacro:husky_wheel wheel_prefix="front_left">
+    <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:husky_wheel>
+  <xacro:husky_wheel wheel_prefix="front_right">
+    <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:husky_wheel>
+  <xacro:husky_wheel wheel_prefix="rear_left">
+    <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:husky_wheel>
+  <xacro:husky_wheel wheel_prefix="rear_right">
+    <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:husky_wheel>
+
+  <!-- Top rover assembly -->
+  <link name="top_assembly_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://enav_ros/meshes/top_assembly.dae" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="top_assembly" type="fixed">
+    <origin xyz="0 0 0.248" rpy="${-M_PI/2} 0 0" />
+    <parent link="base_link" />
+    <child link="top_assembly_link" />
+  </joint>
+
+  <!-- User rail, bumpers, yellow cover -->
+  <xacro:husky_decorate />
+
+    <!-- Top rover plate -->
+    <link name="top_plate_link"/>
+    <joint name="base_link_to_top_plate_link" type="fixed">
+        <origin xyz="0 0 0.255" rpy="0 0 0" />
+        <parent link="base_link" />
+        <child link="top_plate_link" />
+    </joint>
+
+    <!-- GPS -->
+    <link name="gps"/>
+    <joint name="top_plate_link_to_gps" type="fixed">
+        <origin xyz="-0.260 0 0.085" rpy="0 0 0" />
+        <parent link="top_plate_link" />
+        <child link="gps" />
+    </joint>
+
+</robot>
