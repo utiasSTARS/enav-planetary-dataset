@@ -44,7 +44,9 @@ class FetchEnergyDataset:
             "husky_odometry": "/husky_velocity_estimate",
             "husky_cmd_vel": "/husky_commanded_velocity",
             "pointclouds": "/omni_stitched_cloud", 
-            "pose_estimates": "/vins_fusion_path_utm"   
+            "pose_estimates": "/global_odometry_utm",
+            "relative_sun_orientation": "/relative_sun_orientation",   
+            "global_sun_orientation": "/global_sun_orientation",   
         }
         
         # Data retrieval status
@@ -224,14 +226,15 @@ class FetchEnergyDataset:
 
         Input:  rel_time - set timestamps relative to first reading (rather than absolute)
 
-        Return: <float> numpy array with 2 columns:
+        Return: <float> numpy array with 3 columns:
                 timestamp [s],
-                solar irradiance [W/m^2]
+                measured solar irradiance [W/m^2],
+                clear-sky solar irradiance [W/m^2]
         """
 
         tot_msg_count = self.bag.get_message_count(self.tpc_names["pyranometer"])
 
-        data = np.empty((0,2), np.float)
+        data = np.empty((0,3), np.float)
 
         valid_msg_count = 0
 
@@ -250,7 +253,8 @@ class FetchEnergyDataset:
                 
             # Retrieve current data
             temp = np.array([curr_time,
-                                msg.data])
+                                msg.data,
+                                msg.theoretical_clearsky_horizontal])
 
             # Populate main data array
             data = np.vstack([data,temp])
@@ -692,28 +696,93 @@ class FetchEnergyDataset:
 
         print("Retrieving VINS pose estimate data from {} ...".format(self.file))
         print("Number of VINS pose estimate messages: {}".format(tot_msg_count))
-
-        topic, msg, time = list(self.bag.read_messages(self.tpc_names["pose_estimates"]))[-1]
-
-        init_time = msg.poses[0].header.stamp.to_sec()
         
         # Retrieve latest path
-        for pose in msg.poses:
+        for topic, msg, time in self.bag.read_messages(self.tpc_names["pose_estimates"]):
             # Retrieve time & adjust to relative value if needed
             if rel_time:
-                curr_time = pose.header.stamp.to_sec() - init_time
+                if valid_msg_count == 0:
+                    init_time = time.to_sec()
+                curr_time = time.to_sec() - init_time
             else:
-                curr_time = pose.header.stamp.to_sec()
+                curr_time = time.to_sec()
 
             # Retrieve current data
             temp = np.array([curr_time,
-                            pose.pose.position.x,
-                            pose.pose.position.y,
-                            pose.pose.position.z,
-                            pose.pose.orientation.x,
-                            pose.pose.orientation.y,
-                            pose.pose.orientation.z,
-                            pose.pose.orientation.w])
+                            msg.pose.pose.position.x,
+                            msg.pose.pose.position.y,
+                            msg.pose.pose.position.z,
+                            msg.pose.pose.orientation.x,
+                            msg.pose.pose.orientation.y,
+                            msg.pose.pose.orientation.z,
+                            msg.pose.pose.orientation.w])
+
+            # Populate main data array
+            data = np.vstack([data,temp])
+
+            # Show process status:
+            valid_msg_count +=1
+            self.status = round(100*float(valid_msg_count)/tot_msg_count)
+
+            sys.stdout.write('\r')
+            sys.stdout.write("Progress: {} %".format(self.status))
+            sys.stdout.flush()
+        
+        sys.stdout.write("\n")
+
+        return data
+
+    def load_sun_position_data(self, rel_time=False, reference="global"):
+        """ Loads sun position data
+
+        Input:  rel_time - set time relative to first msg (rather than absolute)
+                reference - sun pose vector with respect to global or rover frame
+
+        Return: <float> numpy array of 8 columns:
+                time [s],
+                x_linear_position [m],
+                y_linear_position [m],
+                z_linear_position [m],
+                x_orientation,
+                y_orientation,
+                z_orientation,
+                w_orientation
+        """
+        tot_msg_count = self.bag.get_message_count(self.tpc_names["relative_sun_orientation"])
+        
+        data = np.empty((0,8), np.float)
+
+        valid_msg_count = 0
+
+        print("Retrieving sun orientation data from {} ...".format(self.file))
+        print("Number of sun orientation data messages: {}".format(tot_msg_count))
+        
+        if reference == "global":
+            data_generator = self.bag.read_messages(self.tpc_names["global_sun_orientation"])
+        elif reference == "relative":
+            data_generator = self.bag.read_messages(self.tpc_names["relative_sun_orientation"])
+        else:
+            raise NotImplementedError
+
+        # Retrieve latest path
+        for topic, msg, time in data_generator:
+            # Retrieve time & adjust to relative value if needed
+            if rel_time:
+                if valid_msg_count == 0:
+                    init_time = time.to_sec()
+                curr_time = time.to_sec() - init_time
+            else:
+                curr_time = time.to_sec()
+
+            # Retrieve current data
+            temp = np.array([curr_time,
+                            msg.pose.position.x,
+                            msg.pose.position.y,
+                            msg.pose.position.z,
+                            msg.pose.orientation.x,
+                            msg.pose.orientation.y,
+                            msg.pose.orientation.z,
+                            msg.pose.orientation.w])
 
             # Populate main data array
             data = np.vstack([data,temp])
