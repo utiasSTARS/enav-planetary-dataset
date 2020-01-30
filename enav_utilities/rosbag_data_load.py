@@ -2,7 +2,7 @@
 
 """ rosbag_data_load.py
     
-    Utility functions to load data from the energy-aware planetary dataset
+    Utility functions to load data from the energy-aware planetary navigation dataset
 
     Authors:    Olivier Lamarre <olivier.lamarre@robotics.utias.utoronto.ca>
                 Oliver Limoyo <oliver.limoyo@robotics.utias.utoronto.ca>
@@ -736,7 +736,7 @@ class FetchEnergyDataset:
         """ Loads sun position data
 
         Input:  rel_time - set time relative to first msg (rather than absolute)
-                reference - sun pose vector with respect to global or rover frame
+                reference - sun pose vector with respect to "global" or "rover" frame
 
         Return: <float> numpy array of 8 columns:
                 time [s],
@@ -748,6 +748,7 @@ class FetchEnergyDataset:
                 z_orientation,
                 w_orientation
         """
+        
         tot_msg_count = self.bag.get_message_count(self.tpc_names["relative_sun_orientation"])
         
         data = np.empty((0,8), np.float)

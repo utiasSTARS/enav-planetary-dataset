@@ -14,15 +14,18 @@ Date:   May 22, 2019
 <launch>
     <arg name="bag"/>                       <!-- /complete/path/to/rosbag.bag -->
     <arg name="map_dir" default="false"/>   <!-- /path/to/map/directory-->
+    <arg name="start_time" default="0.0"/>
 
     <!-- Start bag in pause mode -->
     <param name="/use_sim_time" value="true"/>
-    <node pkg="rosbag" type="play" name="player" output="screen" args="$(arg bag) -l --clock --pause"/>
+    <node pkg="rosbag" type="play" name="player" output="screen" args="$(arg bag) -s $(arg start_time) -l --clock --pause"/>
 
-    <!-- Load maps and site origin TF, if map_dir is specified -->
-    <group if="$(eval arg('map_dir') != false)">
-        <node pkg="tf2_ros" type="static_transform_publisher" name="csa_origin_broadcaster"
+    <!-- Load site origin TF -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="csa_origin_broadcaster"
               args="625438.3852074281 5041773.750279282 25 0 0 0 world csa_origin"/>
+
+    <!-- Load maps if map_dir is specified -->
+    <group if="$(eval arg('map_dir') != false)">
         <node pkg="enav_ros" type="site_loader_node" name="site_loader_node" args="$(arg map_dir)" output="screen"/>
     </group>
 

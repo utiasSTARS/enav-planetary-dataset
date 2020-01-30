@@ -2,22 +2,27 @@
 
 Lightweight ROS package to interact and visualize data from the energy-aware planetary navigation dataset. First make sure you read the project's main [README.md](https://github.com/utiasSTARS/enav-planetary-dataset/blob/master/README.md) located in the root directory of this repository for preliminary instructions.
 
-## Basic visualization of rover planar odometry (wheel encoders only)
+## Visualization of rover's reference pose estimates
 
-To visualize the planar wheel odometry estimates contained in a rosbag (`run1_base.bag` for example), start the main launch file by providing the path to the rosbag as argument:
+To visualize the pose estimates generated through the combination of VINS-Fusion (stereo imagery + GPS data), IMU data and reference elevation data contained in a rosbag (`run1_base.bag` for example), start the main launch file the following way:
+
 
 ```sh
-roslaunch enav_ros main.launch bag:=/complete/path/to/run1_base.bag
-# Then, hit spacebar to play the rosbag
+roslaunch enav_ros main.launch bag:=/complete/path/to/run1_base.bag map_dir:/path/to/map/directory start_time:=55.0
+# Then, when everything loaded, hit spacebar to play the rosbag
 ```
 
-This will load a pre-configured RViz windows with a model of the rover and corresponding TF tree. At first, the default fixed frame ("odom") will not be published and the related warnings/errors can be ignored. To play the bag, hit spacebar in the same terminal window. Once the bag runs (and position estimations are generated), the warnings/errors related to the "odom" frame should disappear.
+Arguments:
 
-Notes:
+* `bag`: the complete path to the base .bag file desired
+* `map_dir` (optional, default is `false`): the complete path to the directory containing the map (.tif) files. If unspecified, no map will be loaded.
+* `start_time` (optional, default is 0): the start time (seconds) into the rosbag. This is particularly useful when visualizing the reference pose estimates, since it allows the user to skip the initialization phase of VINS-Fusion. For convenience, here are the `start_time` values to skip the VINS-Fusion initialization for each run:
 
-- In the current implementation, the velocity estimates of the rover's base (obtained solely from encoder velocities) are integrated over time to provide approximate 2D rover positions using a basic implementation of the EKF node included in the robot_localization package.
+Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | Run 6
+--- | --- | --- | --- | --- | ---
+55.0 | 2 | 3 | 4 | 20.0 | 38.0
 
-- The rover base manufacturer recommends using a 1.875 multiplier on the angular (yaw) velocity estimates to take into account the inherent slip experienced by the skid-steer base. This multiplier was not included in the rosbags we are providing, causing oversteering in the odometry estimates compared to the reality.
+The above command will load a pre-configured RViz windows with a model of the rover and corresponding TF tree. Note that at first, the default view will be fixed on the origin of the terrain ("csa_origin"). To play the bag, hit spacebar in the same terminal window. Once the bag runs (and position estimations are generated), the warnings/errors related to the "odom" frame should disappear.
 
 ## Merging all the data (including point clouds) into one rosbag
 
@@ -40,6 +45,6 @@ Notes:
 The merged rosbag data can then be visualized following a similar procedure to that described above:
 
 ```sh
-roslaunch enav_ros main.launch bag:=/complete/path/to/run1_master.bag
-# Then, hit spacebar to play the rosbag
+roslaunch enav_ros main.launch bag:=/complete/path/to/run1_base.bag map_dir:/path/to/map/directory start_time:=55.0
+# Then, when everything loaded, hit spacebar to play the rosbag
 ```

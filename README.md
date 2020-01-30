@@ -26,7 +26,7 @@ Data fetching and plotting alone in generic Python formats can be accomplished u
 
 ![enav_ros](https://media.giphy.com/media/YlBFpSSD9qxbCCCpyp/giphy.gif)
 
-Lastly, this dataset also includes four different aerial maps of the test environment at a resolution of 0.2 meters per pixel: color, elevation, slope magnitude and slope orientation maps. Every map is georeferenced and is available in a `.tif` format. Tools to import them in ROS as a single [grid_map](https://github.com/ANYbotics/grid_map) message are also included:
+Lastly, this dataset also includes four different aerial maps of the test environment at a resolution of 0.2 meters per pixel: color, elevation, slope magnitude and slope orientation maps. Every map is georeferenced and is available in a `.tif` format. Tools to load them in Python or import them in ROS as a single [grid_map](https://github.com/ANYbotics/grid_map) message are also included:
 
 ![enav_maps](https://media.giphy.com/media/j4w8J6OvbReBvQyqn0/giphy.gif)
 
@@ -48,11 +48,11 @@ Lastly, this dataset also includes four different aerial maps of the test enviro
 2. In a Python 3 environment, the required Python 3 modules can be installed using pip and our [requirements file](#):  
    `pip install -r requirements.txt`  
 
-3. Install the required dependencies ([husky_msgs](http://wiki.ros.org/husky_msgs) and [robot_localization](http://wiki.ros.org/robot_localization) ROS packages):
+3. Install the required dependencies ([husky_msgs](http://wiki.ros.org/husky_msgs), [robot_localization](http://wiki.ros.org/robot_localization and [grid_map](https://github.com/ANYbotics/grid_map)) ROS packages):
 
    ```sh
    sudo apt-get update
-   sudo apt-get install ros-kinetic-husky-msgs ros-kinetic-robot-localization
+   sudo apt-get install ros-kinetic-husky-msgs ros-kinetic-robot-localization ros-kinetic-grid-map
    ```
 
 4. Build the enav_ros package:
