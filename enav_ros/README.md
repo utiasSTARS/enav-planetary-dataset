@@ -20,13 +20,13 @@ Arguments:
 
 Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | Run 6
 --- | --- | --- | --- | --- | ---
-55.0 | 2 | 3 | 4 | 20.0 | 38.0
+55.0 | 20.0 | 25.0 | 25.0 | 20.0 | 38.0
 
-The above command will load a pre-configured RViz windows with a model of the rover and corresponding TF tree. Note that at first, the default view will be fixed on the origin of the terrain ("csa_origin"). To play the bag, hit spacebar in the same terminal window. Once the bag runs (and position estimations are generated), the warnings/errors related to the "odom" frame should disappear.
+The above command will load a pre-configured RViz windows with a model of the rover and corresponding TF tree. Note that at first, the default view will be fixed on the origin of the terrain ("csa_origin"). To play the bag, hit spacebar in the same terminal window.
 
 ## Merging all the data (including point clouds) into one rosbag
 
-As mentioned on the dataset's web page, the point clouds of each run were saved in a separate rosbag for convenience. A "master" rosbag file can be created by merging a run's `base` rosbag with its corresponding `clouds_only` rosbag (both are already synchronized) using the [bagedit package](https://github.com/MHarbi/bagedit). Here's a sample usage of the package's `bagmerge.py` script:
+As mentioned on the dataset's web page, the point clouds of each run were saved in a separate rosbag for convenience. While it is possible to manually start both bags (`base` and `clouds_only`) more or less simultaneously in separate terminal windows, another option is to merge them into a "master" rosbag file using the [bagedit package](https://github.com/MHarbi/bagedit). Here's a sample usage of the package's `bagmerge.py` script:
 
 ```sh
 # Terminal 1
@@ -40,7 +40,7 @@ Notes:
 
 - Make sure to have enough free space on your device for the merged rosbag (equivalent to the combined size of the `base` and `clouds_only` bags).
 
-- The bagedit package works with Python2.7. An alternative to installing a Python2.7 environment (and getting it to run with Python3.7) is to fix the `bagmerge.py` script by fixing (or commenting out) its `print` functions (i.e. change every `print "text"` to `print("text")`).
+- The bagedit package works with Python2.7. An alternative to installing a Python2.7 environment is to fix the `bagmerge.py` script so that it runs properly in Python 3.7. This can be accomplished by fixing (or commenting out) its `print` functions (i.e. change every `print "text"` to `print("text")`).
 
 The merged rosbag data can then be visualized following a similar procedure to that described above:
 
