@@ -16,7 +16,7 @@ Energy-aware navigation dataset for planetary rovers, collected at the Canadian 
 **Affiliation**: [Space and Terrestrial Autonomous Robotic Systems (STARS) Laboratory](www.starslab.ca), University of Toronto  
 **Maintainer**: Olivier Lamarre ([email](mailto:olivier.lamarre@robotics.utias.utoronto.ca))
 
-This dataset is described in details in our paper *The Canadian Planetary Emulation Terrain Energy-Aware Rover Navigation Dataset*, submitted to The International Journal of Robotics Research. [Citation instructions](#citation) will follow soon.
+This dataset is described in details in our paper [*The Canadian Planetary Emulation Terrain Energy-Aware Rover Navigation Dataset*](https://journals.sagepub.com/doi/10.1177/0278364920908922), which was accepted for publication in The International Journal of Robotics Research. Please [cite our work accordingly](#citation).
 
 ## Overview
 
@@ -74,5 +74,14 @@ Lastly, this dataset also includes four different aerial maps of the test enviro
 Documentation on how to fetch & plot the data collected by the rover or how to show our aerial maps (along with sample Python scripts) can be found in the [enav_utilities](enav_utilities) subdirectory. Similarly, instructions related to data visualization using our lightweight ROS package can be found in the [enav_ros](enav_ros) subdirectory.
 
 ## Citation
-
-(Coming soon)
+```
+@article{lamarre2020canadian,
+   author = {Lamarre, Olivier and Limoyo, Oliver and Mari{\'c}, Filip and Kelly, Jonathan},
+   title = {{The Canadian Planetary Emulation Terrain Energy-Aware Rover Navigation Dataset}},
+   journal = {The International Journal of Robotics Research},
+   year = {2020},
+   doi = {10.1177/0278364920908922},
+   URL = {https://doi.org/10.1177/0278364920908922},
+   publisher={SAGE Publications Sage UK: London, England}
+}
+```
