@@ -1,20 +1,18 @@
 #!/usr/bin/env python
 
 """ rosbag_data_load.py
-    
+
     Utility functions to load data from the energy-aware planetary navigation dataset
 
     Authors:    Olivier Lamarre <olivier.lamarre@robotics.utias.utoronto.ca>
                 Oliver Limoyo <oliver.limoyo@robotics.utias.utoronto.ca>
-
     Affl.:      Space and Terrestrial Autonomous Robotic Systems Laboratory
                 University of Toronto
-
     Date:       January 27, 2019
 """
 
 import sys
-import time
+# import time
 import itertools
 
 import numpy as np
@@ -24,10 +22,10 @@ import utm
 import sensor_msgs.point_cloud2 as pc2
 
 
-class FetchEnergyDataset:
+class ENAVRosbagLoader:
 
     def __init__(self, filename):
-       
+
         # Initialize object by providing bag file path
         self.file = filename
         self.bag = rosbag.Bag(filename, 'r')
@@ -43,19 +41,20 @@ class FetchEnergyDataset:
             "husky_encoder": "/joint_states",
             "husky_odometry": "/husky_velocity_estimate",
             "husky_cmd_vel": "/husky_commanded_velocity",
-            "pointclouds": "/omni_stitched_cloud", 
+            "pointclouds": "/omni_stitched_cloud",
             "pose_estimates": "/global_odometry_utm",
-            "relative_sun_orientation": "/relative_sun_orientation",   
-            "global_sun_orientation": "/global_sun_orientation",   
+            "relative_sun_orientation": "/relative_sun_orientation",
+            "global_sun_orientation": "/global_sun_orientation",
         }
-        
+
         # Data retrieval status
         self.status = 0
 
     def load_cmd_vel_data(self, rel_time=False):
         """ Loads commanded velocities to the Husky rover base
 
-        Input:  rel_time - set time relative to first msg (rather than absolute)
+        Input:  rel_time - if true, returned time is the number of seconds from
+            the start of the bag (as opposed to an absolute timestamp)
 
         Return: <float> numpy array of 7 columns:
                 time [s],
@@ -76,16 +75,11 @@ class FetchEnergyDataset:
         print("Retrieving husky_cmd_vel data from {} ...".format(self.file))
         print("Number of husky_cmd_vel messages: {}".format(tot_msg_count))
 
-        for topic, msg, time in self.bag.read_messages(self.tpc_names["husky_cmd_vel"]):
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
+        for _, msg, time in self.bag.read_messages(self.tpc_names["husky_cmd_vel"]):
 
+            curr_time = time.to_sec() - time_offset
             temp = np.array([curr_time,
                             msg.linear.x,
                             msg.linear.y,
@@ -100,19 +94,20 @@ class FetchEnergyDataset:
             # Show process status:
             valid_msg_count +=1
             self.status = round(100*float(valid_msg_count)/tot_msg_count)
-            
+
             sys.stdout.write('\r')
             sys.stdout.write("Progress: {} %".format(self.status))
             sys.stdout.flush()
 
         sys.stdout.write("\n")
-        
+
         return data
 
     def load_est_vel_data(self, rel_time=False):
         """ Loads odometry data from the Husky computed from wheel encoders.
 
-        Input:  rel_time - set time relative to first msg (rather than absolute)
+        Input:  rel_time - if true, returned time is the number of seconds from
+            the start of the bag (as opposed to an absolute timestamp)
 
         Return: <float> numpy array of 7 columns:
                 time [s],
@@ -133,16 +128,11 @@ class FetchEnergyDataset:
         print("Retrieving husky_odometry data from {} ...".format(self.file))
         print("Number of husky_odometry messages: {}".format(tot_msg_count))
 
-        for topic, msg, time in self.bag.read_messages(self.tpc_names["husky_odometry"]):
-        
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
+        for _, msg, time in self.bag.read_messages(self.tpc_names["husky_odometry"]):
+
+            curr_time = time.to_sec() - time_offset
             temp = np.array([curr_time,
                             msg.twist.twist.linear.x,
                             msg.twist.twist.linear.y,
@@ -157,20 +147,21 @@ class FetchEnergyDataset:
             # Show process status:
             valid_msg_count +=1
             self.status = round(100*float(valid_msg_count)/tot_msg_count)
-            
+
             sys.stdout.write('\r')
             sys.stdout.write("Progress: {} %".format(self.status))
             sys.stdout.flush()
 
         sys.stdout.write("\n")
-        
+
         return data
 
     def load_encoder_data(self, rel_time=False):
         """ Loads encoder data from the Husky.
 
-        Input:  rel_time - set time relative to first msg (rather than absolute)
-        
+        Input:  rel_time - if true, returned time is the number of seconds from
+            the start of the bag (as opposed to an absolute timestamp)
+
         Return: <float> numpy array of 9 columns:
                 time [s],
                 front_left_wheel position [rad],
@@ -192,18 +183,14 @@ class FetchEnergyDataset:
         print("Retrieving husky_encoder data from {} ...".format(self.file))
         print("Number of husky_encoder messages: {}".format(tot_msg_count))
 
-        for topic, msg, time in self.bag.read_messages(self.tpc_names["husky_encoder"]):
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
+        for _, msg, time in self.bag.read_messages(self.tpc_names["husky_encoder"]):
 
-            pos = np.asarray(msg.position)    
-            vel = np.asarray(msg.velocity)       
+            curr_time = time.to_sec() - time_offset
+
+            pos = np.asarray(msg.position)
+            vel = np.asarray(msg.velocity)
             enc = np.hstack((curr_time, pos,vel))
 
             # Populate main data array
@@ -212,19 +199,20 @@ class FetchEnergyDataset:
             # Show process status:
             valid_msg_count +=1
             self.status = round(100*float(valid_msg_count)/tot_msg_count)
-            
+
             sys.stdout.write('\r')
             sys.stdout.write("Progress: {} %".format(self.status))
             sys.stdout.flush()
 
         sys.stdout.write("\n")
-        
+
         return data
 
     def load_irradiance_data(self, rel_time=False):
         """ Loads solar irradiance data from the pyranometer
 
-        Input:  rel_time - set timestamps relative to first reading (rather than absolute)
+        Input:  rel_time - if true, returned time is the number of seconds from
+            the start of the bag (as opposed to an absolute timestamp)
 
         Return: <float> numpy array with 3 columns:
                 timestamp [s],
@@ -241,17 +229,11 @@ class FetchEnergyDataset:
         print("Retrieving pyranometer data from {} ...".format(self.file))
         print("Number of pyranometer messages: {}".format(tot_msg_count))
 
-        for topic, msg, time in self.bag.read_messages(self.tpc_names["pyranometer"]):
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
-                
-            # Retrieve current data
+        for _, msg, time in self.bag.read_messages(self.tpc_names["pyranometer"]):
+
+            curr_time = time.to_sec() - time_offset
             temp = np.array([curr_time,
                                 msg.data,
                                 msg.theoretical_clearsky_horizontal])
@@ -262,20 +244,21 @@ class FetchEnergyDataset:
             # Show process status:
             valid_msg_count +=1
             self.status = round(100*float(valid_msg_count)/tot_msg_count)
-            
+
             sys.stdout.write('\r')
             sys.stdout.write("Progress: {} %".format(self.status))
             sys.stdout.flush()
-        
+
         sys.stdout.write("\n")
-        
+
         return data
-        
+
     def load_energy_data(self, rel_time=False):
         """ Loads data from driving motors power monitors onboard the Husky
             Energy values are obtained by integrating power consumption values
 
-        Input:  rel_time - set timestamps relative to first reading (rather than absolute)
+        Input:  rel_time - if true, returned time is the number of seconds from
+            the start of the bag (as opposed to an absolute timestamp)
 
         Return: <float> numpy array of 9 columns:
                 timestamp [s],
@@ -298,31 +281,24 @@ class FetchEnergyDataset:
         print("Retrieving power data from {} ...".format(self.file))
         print("Number of power messages: {}".format(tot_msg_count))
 
-        for topic, msg, time in self.bag.read_messages(self.tpc_names["power"]):
-            #if topic == self.tpc_names["power"]:
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
+        for _, msg, time in self.bag.read_messages(self.tpc_names["power"]):
 
-            # Retrieve current data
+            curr_time = time.to_sec() - time_offset
             temp = np.array([curr_time,
                                 msg.left_driver_voltage,
                                 msg.left_driver_current,
                                 msg.right_driver_voltage,
                                 msg.right_driver_current])
-            
+
             # Populate main data array
             data = np.vstack([data,temp])
 
             # Show process status:
             valid_msg_count +=1
             self.status = round(100*float(valid_msg_count)/tot_msg_count)
-            
+
             sys.stdout.write('\r')
             sys.stdout.write("Progress: {} %".format(self.status))
             sys.stdout.flush()
@@ -351,7 +327,8 @@ class FetchEnergyDataset:
     def load_imu_data(self, rel_time=False):
         """ Loads IMU data
 
-        Input:  rel_time - set timestamp relative to first reading (rather than absolute)
+        Input:  rel_time - if true, returned time is the number of seconds from
+            the start of the bag (as opposed to an absolute timestamp)
 
         Return: <float> numpy array of 11 columns:
                 timestamp [s],
@@ -376,17 +353,11 @@ class FetchEnergyDataset:
         print("Retrieving IMU data from {} ...".format(self.file))
         print("Number of IMU messages: {}".format(tot_msg_count))
 
-        for topic, msg, time in self.bag.read_messages(self.tpc_names["imu"]):
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
+        for _, msg, time in self.bag.read_messages(self.tpc_names["imu"]):
 
-            # Retrieve current data
+            curr_time = time.to_sec() - time_offset
             temp = np.array([curr_time,
                                 msg.linear_acceleration.x,
                                 msg.linear_acceleration.y,
@@ -398,7 +369,7 @@ class FetchEnergyDataset:
                                 msg.orientation.y,
                                 msg.orientation.z,
                                 msg.orientation.w])
-            
+
             # Populate main data array
             data = np.vstack([data,temp])
 
@@ -414,18 +385,28 @@ class FetchEnergyDataset:
 
         return data
 
-    def load_pointcloud_data(self, pc_source="omni_stitched_cloud", time_range=None, rel_time=False):
-        """ Loads pointcloud data from stereo omnidirectional camera mounted on the Husky
+    def load_pointcloud_data(
+            self,
+            pc_source="omni_stitched_cloud",
+            time_range=None,
+            rel_time=False
+        ):
+        """ Loads point cloud data from stereo omnidirectional camera
 
-        Input:  pc_source - get pointclouds from {omni_cloud0, ..., omni_cloud4, omni_stitched_cloud}
-                time_range - ROS time range (Unix epoch time) to load images from with tuple (start,end), None defaults to all 
-                rel_time - set time relative to first msg (rather than absolute)
+        Input:  pc_source - point cloud source, from {omni_cloud0, ...,
+                    omni_cloud4, omni_stitched_cloud}
+                time_range - Load clouds inside of this time range (2-tuple of
+                    floating point timestamps (seconds)). If rel_time is True,
+                    these time values are expected to be times elapsed from the
+                    start of the bag, in seconds. Absolute ROS times otherwise.
+                rel_time - if true, returned time is the number of seconds from
+                    the start of the bag (as opposed to an absolute timestamp)
 
-        Return: tuple of (times [s], clouds). 
+        Return: tuple of (times [s], clouds).
                 times is a <float> numpy array of dimension: (batch,)
-                clouds is a list of <float> numpy arrays. Each <float> numpy 
-                array (a single pointcloud) is of dimension: (n_points, 3), 
-                where each column corresponds to x,y,z, respectively. 
+                clouds is a list of <float> numpy arrays. Each <float> numpy
+                array (a single pointcloud) is of dimension: (n_points, 3),
+                where each column corresponds to x,y,z, respectively.
         """
 
         if pc_source == "omni_stitched_cloud":
@@ -443,11 +424,16 @@ class FetchEnergyDataset:
 
         if time_range == None:
             print("Loading all {} pointclouds".format(tot_msg_count))
-            # Calculate the amount of images to pre-allocate later
             pc_count = tot_msg_count
+
         elif type(time_range) is tuple:
 
-            t_range = self.time_to_timestep(time_range, tot_msg_count)
+            if rel_time:
+                abs_time_range = tuple((t+self.bag.get_start_time() for t in time_range))
+            else:
+                abs_time_range = time_range
+
+            t_range = self.time_to_timestep(abs_time_range, tot_msg_count)
 
             # Quick check for tuple range
             if not (0 <= t_range[0] < tot_msg_count and 0 <= t_range[1] < tot_msg_count):
@@ -456,49 +442,46 @@ class FetchEnergyDataset:
 
             print("Loading pointclouds from timesteps {} to {}".format(t_range[0], t_range[1]))
             # Don't load all the data, instead slice the generator at the desired range
-            pc_gen = itertools.islice(pc_gen, t_range[0], t_range[1]) 
-
-            # Calculate the amount of images to pre-allocate later
+            pc_gen = itertools.islice(pc_gen, t_range[0], t_range[1])
             pc_count = (t_range[1] - t_range[0]) + 1
+
         else:
             raise ValueError("Invalid type {} for 't_range', t_range is a tuple (start,end) or None" % type(t_range))
+
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
         time_data = np.empty((pc_count))
         data = []
         for i, (_, msg, time) in enumerate(pc_gen):
 
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
-            time_data[i] = curr_time
+            time_data[i] = time.to_sec() - time_offset
 
             # for PointCloud2
-            pc = [[point[0], point[1], point[2]] for point in 
+            pc = [[point[0], point[1], point[2]] for point in
                     pc2.read_points(msg, field_names = ("x", "y", "z"), skip_nans=True)]
-
             # for PointCloud
             # pc = [[point.x, point.y, point.z] for point in msg.points]
+
             data.append(np.asarray(pc, dtype=np.float32))
             valid_msg_count +=1
 
         return (time_data, data)
 
     def load_image_data(self, img_source="mono_image", time_range=None, rel_time=False):
-        """ Loads image data from cameras mounted on the Husky
+        """ Loads image data from a specific camera
 
-        Input:  string img_source - get images from {"omni_image0", ..., "omni_image9", 
+        Input:  string img_source - get images from {"omni_image0", ..., "omni_image9",
                 "omni_stitched_image", "omni_stitched_disparity", "mono_image"}
-                time_range - ROS time range (Unix epoch time) to load images from 
-                with tuple (start,end), None defaults to all 
-                rel_time - set time relative to first msg (rather than absolute)
+                time_range - Load images inside of this time range (2-tuple of
+                    floating point timestamps (seconds)). If rel_time is True,
+                    these time values are expected to be times elapsed from the
+                    start of the bag, in seconds. Absolute ROS times otherwise.
+                rel_time - if true, returned time is the number of seconds from
+                    the start of the bag (as opposed to an absolute timestamp)
 
-        Return: tuple of (time [s], images). 
+        Return: tuple of (time [s], images).
                 time is a <float> numpy array of dimension: (batch,).
-                images is a <int> numpy array of dimension: 
+                images is a <int> numpy array of dimension:
                 (batch, height, width) or (batch , height, width, channel).
         """
 
@@ -534,35 +517,38 @@ class FetchEnergyDataset:
             # Calculate the amount of images to pre-allocate later
             img_count = tot_msg_count
         elif type(time_range) is tuple:
-            
-            t_range = self.time_to_timestep(time_range, tot_msg_count)
+
+            if rel_time:
+                abs_time_range = tuple((t+self.bag.get_start_time() for t in time_range))
+            else:
+                abs_time_range = time_range
+
+            t_range = self.time_to_timestep(abs_time_range, tot_msg_count)
 
             # Quick check for tuple range
             if not (0 <= t_range[0] < tot_msg_count and 0 <= t_range[1] < tot_msg_count):
-                raise ValueError("Invalid timestep range {} for image dataset of size {}" \
-                                .format(t_range, tot_msg_count))
+                raise ValueError(
+                    "Invalid timestep range {} for image dataset of size {}. " \
+                                .format(t_range, tot_msg_count) +\
+                    "Current rosbag start-end timestamps: {}-{}".format(self.bag.get_start_time(),self.bag.get_end_time())
+                )
 
             print("Loading images from timesteps {} to {}".format(t_range[0], t_range[1]))
             # Don't load all the data, instead slice the generator at the desired range
-            img_gen = itertools.islice(img_gen, t_range[0], t_range[1]) 
+            img_gen = itertools.islice(img_gen, t_range[0], t_range[1])
 
             # Calculate the amount of images to pre-allocate later
             img_count = (t_range[1] - t_range[0]) + 1
         else:
             raise ValueError("Invalid type {} for 't_range', t_range is a tuple (start,end) or None" % type(t_range))
 
+        time_offset = self.bag.get_start_time() if rel_time else 0
+
         time_data = np.empty((img_count))
         for i, (_, msg, time) in enumerate(img_gen):
             img = np.fromstring(msg.data, dtype=np.uint8)
 
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
-            time_data[i] = curr_time
+            time_data[i] = time.to_sec() - time_offset
 
             if i == 0:
                 # Get the dimensions from the first image and pre-allocate
@@ -597,7 +583,7 @@ class FetchEnergyDataset:
 
         Return: energy - (batch,) energy array [J]
         """
-        
+
         n = time.shape[0]
         energy = np.zeros(n)
 
@@ -605,12 +591,13 @@ class FetchEnergyDataset:
             energy[i+1] = energy[i] + np.trapz(power[i:i+2], x=time[i:i+2])
 
         return energy
-    
+
     def load_gps_data(self, ret_utm=False, rel_time=False):
         """ Loads GPS data
 
         Input:  ret_utm - return the position as UTM coords (instead of lat-lon)
-                rel_time - set timestamp relative to first reading (rather than absolute)
+                rel_time - if true, returned time is the number of seconds from
+                    the start of the bag (as opposed to an absolute timestamp)
 
         Return: <float> numpy array of 4 columns if ret_utm argument is False:
                 ROS timestamp [s],
@@ -636,16 +623,11 @@ class FetchEnergyDataset:
         print("Retrieving GPS data from {} ...".format(self.file))
         print("Number of GPS messages: {}".format(tot_msg_count))
 
-        for topic, msg, time in self.bag.read_messages(self.tpc_names["gps"]):
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
+        for _, msg, time in self.bag.read_messages(self.tpc_names["gps"]):
 
+            curr_time = time.to_sec() - time_offset
             lat = msg.latitude
             lon = msg.longitude
             alt = msg.altitude
@@ -656,26 +638,27 @@ class FetchEnergyDataset:
                 temp = np.array([curr_time, easting, northing, alt])
             else:
                 temp = np.array([curr_time, lat, lon, alt])
-            
+
             # Populate main data array
             data = np.vstack([data,temp])
 
             # Show process status:
             valid_msg_count +=1
             self.status = round(100*float(valid_msg_count)/tot_msg_count)
-            
+
             sys.stdout.write('\r')
             sys.stdout.write("Progress: {} %".format(self.status))
             sys.stdout.flush()
-        
+
         sys.stdout.write("\n")
-        
+
         return data
 
     def load_VINS_data(self, rel_time=False):
         """ Loads pose estimates from VINS-Fusion
 
-        Input:  rel_time - set time relative to first msg (rather than absolute)
+        Input:  rel_time - if true, returned time is the number of seconds from
+                    the start of the bag (as opposed to an absolute timestamp)
 
         Return: <float> numpy array of 8 columns:
                 time [s],
@@ -689,25 +672,20 @@ class FetchEnergyDataset:
         """
 
         tot_msg_count = self.bag.get_message_count(self.tpc_names["pose_estimates"])
-        
+
         data = np.empty((0,8), np.float)
 
         valid_msg_count = 0
 
         print("Retrieving VINS pose estimate data from {} ...".format(self.file))
         print("Number of VINS pose estimate messages: {}".format(tot_msg_count))
-        
-        # Retrieve latest path
-        for topic, msg, time in self.bag.read_messages(self.tpc_names["pose_estimates"]):
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
 
-            # Retrieve current data
+        time_offset = self.bag.get_start_time() if rel_time else 0
+
+        # Retrieve latest path
+        for _, msg, time in self.bag.read_messages(self.tpc_names["pose_estimates"]):
+
+            curr_time = time.to_sec() - time_offset
             temp = np.array([curr_time,
                             msg.pose.pose.position.x,
                             msg.pose.pose.position.y,
@@ -727,7 +705,7 @@ class FetchEnergyDataset:
             sys.stdout.write('\r')
             sys.stdout.write("Progress: {} %".format(self.status))
             sys.stdout.flush()
-        
+
         sys.stdout.write("\n")
 
         return data
@@ -735,7 +713,8 @@ class FetchEnergyDataset:
     def load_sun_position_data(self, rel_time=False, reference="global"):
         """ Loads sun position data
 
-        Input:  rel_time - set time relative to first msg (rather than absolute)
+        Input:  rel_time - if true, returned time is the number of seconds from
+                    the start of the bag (as opposed to an absolute timestamp)
                 reference - sun pose vector with respect to "global" or "rover" frame
 
         Return: <float> numpy array of 8 columns:
@@ -748,16 +727,16 @@ class FetchEnergyDataset:
                 z_orientation,
                 w_orientation
         """
-        
+
         tot_msg_count = self.bag.get_message_count(self.tpc_names["relative_sun_orientation"])
-        
+
         data = np.empty((0,8), np.float)
 
         valid_msg_count = 0
 
         print("Retrieving sun orientation data from {} ...".format(self.file))
         print("Number of sun orientation data messages: {}".format(tot_msg_count))
-        
+
         if reference == "global":
             data_generator = self.bag.read_messages(self.tpc_names["global_sun_orientation"])
         elif reference == "relative":
@@ -765,17 +744,12 @@ class FetchEnergyDataset:
         else:
             raise NotImplementedError
 
-        # Retrieve latest path
-        for topic, msg, time in data_generator:
-            # Retrieve time & adjust to relative value if needed
-            if rel_time:
-                if valid_msg_count == 0:
-                    init_time = time.to_sec()
-                curr_time = time.to_sec() - init_time
-            else:
-                curr_time = time.to_sec()
+        time_offset = self.bag.get_start_time() if rel_time else 0
 
-            # Retrieve current data
+        # Retrieve latest path
+        for _, msg, time in data_generator:
+
+            curr_time = time.to_sec() - time_offset
             temp = np.array([curr_time,
                             msg.pose.position.x,
                             msg.pose.position.y,
@@ -795,7 +769,7 @@ class FetchEnergyDataset:
             sys.stdout.write('\r')
             sys.stdout.write("Progress: {} %".format(self.status))
             sys.stdout.flush()
-        
+
         sys.stdout.write("\n")
 
         return data

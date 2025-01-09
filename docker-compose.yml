@@ -1,0 +1,18 @@
+services:
+  enav:
+    image: olamarre/enav:latest
+    container_name: enav
+
+    stdin_open: true  # --interactive (-i) flag
+    tty: true  # --tty (-t) flag
+
+    # X server setup, inspired by https://wiki.ros.org/docker/Tutorials/GUI
+    environment:
+      - DISPLAY
+      - QT_X11_NO_MITSHM=1
+
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw  # X server
+      - ${ENAV_DATASET_DIR}:/enav_dataset
+
+    command: bash  # keep the container session open

@@ -1,0 +1,52 @@
+services:
+  enav:
+    build:
+      context: ..  # Project root is the build context
+      dockerfile: dev/Dockerfile.dev
+
+    # X server setup, inspired by https://wiki.ros.org/docker/Tutorials/GUI
+    environment:
+      - DISPLAY
+      - QT_X11_NO_MITSHM=1
+      - DEBUG=true
+
+    stdin_open: true  # --interactive (-i) flag
+    tty: true  # --tty (-t) flag
+
+    volumes:
+      - ..:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw  # X server
+      - ${ENAV_DATASET_DIR}:/enav_dataset
+
+    # Build & install mounted project volume (bash keeps the container running)
+    command: >
+      bash -c "
+      ln -s /workspace/enav_ros /root/catkin_ws/src &&
+      cd /root/catkin_ws && source /opt/ros/kinetic/setup.sh && catkin_make &&
+      cd /workspace/enav_utilities &&
+      pip install -e . &&
+      echo 'ENAV utilities mounted & installed, container up & running' &&
+      bash"
+
+
+    # ports:
+    #   - "8000:8000"
+    # entrypoint: ["bash"]
+
+    # image: olamarre/enav:latest
+    # container_name: enav
+
+
+    # # X server setup, inspired by https://wiki.ros.org/docker/Tutorials/GUI
+    # environment:
+    #   - DISPLAY
+    #   - QT_X11_NO_MITSHM=1
+
+    # volumes:
+    #   - /tmp/.X11-unix:/tmp/.X11-unix:rw  # X server
+    #   - ${ENAV_DATASET_DIR}:/enav_dataset
+    #   - ./:/dev/enav-planetary-dataset
+
+    # # ports:
+    # #   - 8080:8080
+    # command: bash

@@ -20,61 +20,71 @@ This dataset is described in details in our paper [*The Canadian Planetary Emula
 
 ## Overview
 
-The data can be downloaded from the dataset's official [web page](http://www.starslab.ca/enav-planetary-dataset/), which contains the data both in human-readable and rosbag format. This repository provides tools to interact with the rosbag files.
+The dataset is further described in the project's official [web page](http://www.starslab.ca/enav-planetary-dataset/) and can be downloaded from a dedicated [IEEE DataPort page](https://ieee-dataport.org/open-access/canadian-planetary-emulation-terrain-energy-aware-rover-navigation-dataset) (requires creating a free account). The dataset is available in both rosbag and human-readable formats. This repository provides tools to interact with the rosbag files; we let users interested in the human-readable-formatted data develop their own utilities.
 
-Data fetching and plotting alone in generic Python formats can be accomplished using our custom fetching script (which wraps the rosbag module). Advanced data visualization and interaction is enabled using our lightweight ROS package (tested with ROS Kinetic on Ubuntu 16.04):
+We provide a Docker container in which rosbags can be played and visualized using our custom ROS package, or parsed using our python utility scripts:
 
 ![enav_ros](https://media.giphy.com/media/YlBFpSSD9qxbCCCpyp/giphy.gif)
 
-Lastly, this dataset also includes four different aerial maps of the test environment at a resolution of 0.2 meters per pixel: color, elevation, slope magnitude and slope orientation maps. Every map is georeferenced and is available in a `.tif` format. Tools to load them in Python or import them in ROS as a single [grid_map](https://github.com/ANYbotics/grid_map) message are also included:
+Lastly, this dataset also includes four different aerial maps of the test environment at a resolution of 0.2 meters per pixel: color, elevation, slope magnitude and slope orientation maps. Every map is georeferenced and is available in a `.tif` format. Tools to broadcast them as ROS topics (as [grid_map](https://github.com/ANYbotics/grid_map) messages) or simply load them using Python are also included:
 
 ![enav_maps](https://media.giphy.com/media/j4w8J6OvbReBvQyqn0/giphy.gif)
 
+## Setup
 
-## Pre-requisites
+As the dataset was originally collected with ROS Kinetic with a Ubuntu 16.04 machine, we provide a Docker container to play rosbags and/or extract specific data streams with Python.
 
-1. ROS installation ([ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu) tested);
-2. Python 3 (version 3.7 tested). We recommend using a Python environment manager like [pyenv](https://github.com/pyenv/pyenv);
+1. Store downloaded rosbags in a single directory and the georeferenced maps in a dedicated subdirectory.
 
-## Installation
+```sh
+tree /path/to/dataset/dir
 
-1. Clone this repository (including the submodules) in the `src` directory of your catkin workspace:
+├── run1_base_new.bag
+├── run2_base_new.bag
+├── run3_base_new.bag
+├── run4_base_new.bag
+├── ...
+├── maps
+    ├── aspect_utm_20cm.tif
+    ├── dem_utm_20cm.tif
+    ├── mosaic_utm_20cm.tif
+    └── slope_utm_20cm.tif
+```
 
-   ```sh
-   cd ~/catkin_ws/src
-   git clone --recurse-submodules https://github.com/utiasSTARS/enav-planetary-dataset.git
-   ```
+> Note: obviously, you don't need to download all the rosbags - just the ones you need.
 
-2. In a Python 3 environment, the required Python 3 modules can be installed using pip and our [requirements file](#):  
-   `pip install -r requirements.txt`  
+2. Clone the current repository and store the location of the downloaded dataset in a `.env` file in the project's root directory:
 
-3. Install the required dependencies ([husky_msgs](http://wiki.ros.org/husky_msgs), [robot_localization](http://wiki.ros.org/robot_localization and [grid_map](https://github.com/ANYbotics/grid_map)) ROS packages):
+```sh
+git clone https://github.com/utiasSTARS/enav-planetary-dataset.git
+cd enav-planetary-dataset
 
-   ```sh
-   sudo apt-get update
-   sudo apt-get install ros-kinetic-husky-msgs ros-kinetic-robot-localization ros-kinetic-grid-map
-   ```
+echo "ENAV_DATASET_DIR='/path/to/enav_dataset/dir'" > .env
+```
 
-4. Build the enav_ros package:
+3. If not already done, [install Docker](https://docs.docker.com/engine/install/). Then, set up X server permissions:
 
-   ```sh
-   cd ~/catkin_ws
+```sh
+xhost +local:root
+```
 
-   # If you are using catkin build:
-   catkin build enav_ros
-   source ~/catkin_ws/setup.bash
+Run a container and enter it:
 
-   # Alternatively, using catkin_make:
-   catkin_make --pkg enav_ros
-   source ~/catkin_ws/setup.bash
-   ```
+```sh
+docker compose run --rm enav
+```
 
-## Documentation
+Note that the dataset directory is now mounted at `/enav_dataset` in the container.
 
-Documentation on how to fetch & plot the data collected by the rover or how to show our aerial maps (along with sample Python scripts) can be found in the [enav_utilities](enav_utilities) subdirectory. Similarly, instructions related to data visualization using our lightweight ROS package can be found in the [enav_ros](enav_ros) subdirectory.
+Rosbag interactions are done from inside the container:
+
+- Playing rosbags and launching ROS visualization interfaces is documented in the `enav_ros` package's [README file](enav_ros/README.md).
+
+- Extracting data from rosbags with Python is documented in the `enav_utilities` package's [README file](enav_utilities/README.md).
 
 ## Citation
-```
+
+```txt
 @article{lamarre2020canadian,
    author = {Lamarre, Olivier and Limoyo, Oliver and Mari{\'c}, Filip and Kelly, Jonathan},
    title = {{The Canadian Planetary Emulation Terrain Energy-Aware Rover Navigation Dataset}},

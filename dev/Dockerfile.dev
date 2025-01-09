@@ -1,0 +1,44 @@
+# Docker file dor development purposes with the ENAV project.
+# Mounts the repository in a running container, as opposed to copying its
+# contents (which is what the deployed version does)
+
+FROM osrf/ros:kinetic-desktop-full
+
+LABEL author="Olivier Lamarre"
+LABEL description="Development for ENAV dataset utilities"
+
+# Dependencies
+RUN apt-get update \
+    && apt-get install -y \
+    build-essential \
+    curl \
+    cython \
+    git \
+    libeigen3-dev \
+    libgdal-dev \
+    python-pip \
+    python-tk \
+    ros-kinetic-grid-map \
+    ros-kinetic-interactive-marker-twist-server \
+    ros-kinetic-moveit-ros-visualization \
+    ros-kinetic-robot-localization \
+    tmux \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Catkin workspace & custom ROS package
+RUN mkdir -p /root/catkin_ws/src
+# COPY ./enav_ros /root/catkin_ws/src/enav_ros
+
+RUN git clone https://github.com/MHarbi/bagedit.git /root/catkin_ws/src/bagedit
+RUN cd /root/catkin_ws/src/bagedit && git checkout f97b21050826f65757040750cecc165abd67c0d2
+
+RUN . /opt/ros/kinetic/setup.sh && cd /root/catkin_ws && catkin_make
+
+RUN echo "source /opt/ros/kinetic/setup.bash" >> /root/.bashrc
+RUN echo "source /root/catkin_ws/devel/setup.bash" >> /root/.bashrc
+
+WORKDIR /workspace
+
+# Disable default entrypoint from parent ROS image
+ENTRYPOINT []
